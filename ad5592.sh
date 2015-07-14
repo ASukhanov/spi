@@ -18,7 +18,13 @@ OPTIONS:
   -b R  Read back the setting of register R
   -z    reset
 
-EXAMPLE:
+EXAMPLES:
+  reset and read Reg[6]
+  $0 -z -b6
+  should give you:
+RX | 00 00 __ __ __ __ __ __ __ __ __ __ __ __ __ __  | ..
+RX | 00 00 00 7F __ __ __ __ __ __ __ __ __ __ __ __  | ..
+
   write 0x1234 into reg[3] and read back its content
   $0 -v -r3 -w16#1234 -x1 -b3
   read ADC[4] and  ADC[0]:

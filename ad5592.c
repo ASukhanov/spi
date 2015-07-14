@@ -316,23 +316,26 @@ int main(int argc, char *argv[])
 		tx = malloc(size);
 		rx = malloc(size);
 		size = unescape((char *)tx, input_tx, size);
-                //split transfer into 2-byte chunks, needed for ad5592
+		transfer(fd, tx, rx, size);
+                /*split transfer into 2-byte chunks, needed for ad5592
 		for(it=tx,ir=rx,ii=0; ii<size; ii+=2)
 		{
 			transfer(fd, it, ir, 2);
 			it += 2; ir += 2;
-		}
-	        if (verbose)	hex_dump(tx, size, 16, "TX");
-        	hex_dump(rx, size, 16, "RX");
-		free(rx);
-		free(tx);
+		}*/
 	} else {
 		size = sizeof(default_tx);
-		transfer(fd, default_tx, default_rx, size);
-                if (verbose)    hex_dump(tx, size, 16, "TX");
-                hex_dump(rx, size, 16, "RX");
+                tx = (uint8_t*) &default_tx;
+                rx = (uint8_t*) &default_rx;
+		transfer(fd, tx, rx, size);
 	}
-
+	if (verbose)    hex_dump(tx, size, 16, "TX");
+	hex_dump(rx, size, 16, "RX");
+        if( tx != (uint8_t*) &default_tx)
+	{
+		free(rx);
+		free(tx);
+	}
 	close(fd);
 
 	return ret;
