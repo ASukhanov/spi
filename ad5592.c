@@ -284,6 +284,13 @@ int main(int argc, char *argv[])
 	if (ret == -1)
 		pabort("can't get spi mode");
 */
+        ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);
+        if (ret == -1)
+                pabort("can't set spi mode");
+
+        ret = ioctl(fd, SPI_IOC_RD_MODE, &mode);
+        if (ret == -1)
+                pabort("can't get spi mode");
 	/*
 	 * bits per word
 	 */
@@ -316,13 +323,13 @@ int main(int argc, char *argv[])
 		tx = malloc(size);
 		rx = malloc(size);
 		size = unescape((char *)tx, input_tx, size);
-		transfer(fd, tx, rx, size);
-                /*split transfer into 2-byte chunks, needed for ad5592
+		//transfer(fd, tx, rx, size);
+                //split transfer into 2-byte chunks, needed for ad5592
 		for(it=tx,ir=rx,ii=0; ii<size; ii+=2)
 		{
 			transfer(fd, it, ir, 2);
 			it += 2; ir += 2;
-		}*/
+		}//
 	} else {
 		size = sizeof(default_tx);
                 tx = (uint8_t*) &default_tx;
