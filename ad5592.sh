@@ -111,7 +111,7 @@ while getopts "vx:a:ib:w:zh" opt; do
        BYTES=$BYTES\\x${HEX:0:2}\\x${HEX:2:2}
        ;;
     i)
-       get_two_bytes $Reg_PowerDown;
+       get_two_bytes $Reg_Powerdown;
        list=$two_bytes;
        get_two_bytes $Reg_ADC_Config;
        list=$list$two_bytes;
