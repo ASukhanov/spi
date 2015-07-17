@@ -1,0 +1,4 @@
+#!/bin/bash
+# print AD5592 registers
+./ad5592.sh -b1 -b2 -b3 -b4 -b5 -b6 -b7 -b8 -b9 -b10 -b11 -b12 -b13
+

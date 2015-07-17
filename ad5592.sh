@@ -15,11 +15,11 @@ OPTIONS:
         bits M[7:0] specify the ADC channels for readout
         bit M[8]: include temperature in the readout sequence
         bit M[9]: repeat mode of the ADC readout
-  -wRW  Schedule the writing of 11 bits W[10:0] into the register RR.
+  -wRW  Schedule the writing of 11 bits W[10:0] into the register R.
         R should be 2-digit field ranging from 01 to 14.
-  -x N  Execute the scheduled transfers, followed by the reading of N 16-bit
+  -xN   Execute the scheduled transfers, followed by the reading of N 16-bit
         words.
-  -b R  Read back the setting of register R.
+  -bR   Read back the setting of register R.
   -z    reset.
 
 EXAMPLES:
@@ -29,19 +29,19 @@ EXAMPLES:
 RX | 00 00 __ __ __ __ __ __ __ __ __ __ __ __ __ __  | ..
 RX | 00 00 00 7F __ __ __ __ __ __ __ __ __ __ __ __  | ..
 
-  configure 8 channels as DACss (e.g. write 0xFF into reg[5])
-  $0 -w050xFF -x0
+  Configure 8 channels as ADCs (e.g. write 0xFF into reg[4])
+  Configure channels 1,3,5,7 as DACs (e.g. write 0xAA into reg[5])
+  $0 -w040xAA -w050xFF -x0
 
-  configure 8 channels as ADCs (e.g. write 0xFF into reg[4])
-  $0 -w040xFF -x0
+  Monitor 7 ADC channels and temperature every second:
+  $0 -a0x37f -x0  # set ADC repetitive mode and enable 7 ADCs in sewquence
+  while true ; do ./ad5592.sh -x8; sleep 1; done
 
-  read temperature and 8 ADC channels:
-  $0 -a0x1ff -x9
-  or: $0 -a16#1ff -x9
-  or: $0 -a2#111111111 -x9
+  Turn off ADC repetitive mode.
+  $0 -a0 -x0
 
-  write to General Purpose Register 0x00F0 and read back
-  $0 -v -r3 -w16#f0 -x1 -b3
+  write 0x330 into the General Purpose Register and read back
+  $0 -w0316#330 -x0 -b3
   the result should be: RX | 00 00 00 F0
 
   read back all registers:
@@ -71,8 +71,9 @@ VERB=""
 # Enable internal reference
 ((Reg_General_Purpose_Control = 2#0001101100110000)) #
 # addr=3, ADC buffer enabled, Lock off, not AllDACs, ADC range 2x, DAC: 2x.
-((Reg_ADC_Config              = 2#0010000111110000)) #
-((Reg_DAC_Config              = 2#0010100000001111)) #
+((Reg_ADC_Config              = 2#0010000111111111)) # all ADCs and temperature selected
+((Reg_Sequencer               = 2#0001000000000000)) # empty sequencer
+((Reg_DAC_Config              = 2#0010100010101010)) # setting for the EMCO board
 ((Reg_Readback                = 2#0011100001000000)) #
 ((Reg_Reset                   = 2#0111110110101100)) #
 twoz="\x00\x00"
@@ -104,7 +105,7 @@ while getopts "vx:a:ib:w:zh" opt; do
        BYTES="";
        ;;
     a)
-       ((Reg_Sequencer = 2<<11 | ($OPTARG & 0x7FF) ))
+       ((Reg_Sequencer = Reg_Sequencer | ($OPTARG & 0x7FF) ))
        #printf '%04x\n' $Reg_Sequencer
        if [ -n "$VERB" ]; then printf 'Reg_Sequence = %04x\n' $Reg_Sequencer; fi
        HEX=`printf '%04x' $Reg_Sequencer`
@@ -112,6 +113,8 @@ while getopts "vx:a:ib:w:zh" opt; do
        ;;
     i)
        get_two_bytes $Reg_Powerdown;
+       list=$two_bytes;
+       get_two_bytes $Reg_Sequencer;
        list=$two_bytes;
        get_two_bytes $Reg_ADC_Config;
        list=$list$two_bytes;
