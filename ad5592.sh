@@ -16,10 +16,11 @@ OPTIONS:
         bit M[8]: include temperature in the readout sequence
         bit M[9]: repeat mode of the ADC readout
   -wRW  Schedule the writing of 11 bits W[10:0] into the register R.
-        R should be 2-digit field ranging from 01 to 14.
+        R should be 2-digit field. 01:07 setup registers, 08:15 DAC registers
   -xN   Execute the scheduled transfers, followed by the reading of N 16-bit
         words.
   -bR   Read back the setting of register R.
+  -sRW  Set DAC[R]=W. R should be less than 8.
   -z    reset.
 
 EXAMPLES:
@@ -34,7 +35,7 @@ RX | 00 00 00 7F __ __ __ __ __ __ __ __ __ __ __ __  | ..
   $0 -w040xAA -w050xFF -x0
 
   Monitor 7 ADC channels and temperature every second:
-  $0 -a0x37f -x0  # set ADC repetitive mode and enable 7 ADCs in sewquence
+  $0 -a0x37f -x0  # set ADC repetitive mode and enable 7 ADCs in sequence
   while true ; do ./ad5592.sh -x8; sleep 1; done
 
   Turn off ADC repetitive mode.
@@ -44,14 +45,11 @@ RX | 00 00 00 7F __ __ __ __ __ __ __ __ __ __ __ __  | ..
   $0 -w0316#330 -x0 -b3
   the result should be: RX | 00 00 00 F0
 
+  set DAC[1] to 0x200 and read it back
+  $0 -s10x200 -w010x19 -x1
+
   read back all registers:
   $0 -b1 -b2 -b3 -b4 -b5 -b6 -b7 -b8 -b9 -b10 -b11 -b12 -b13
-
-  write 0x1234 into reg[3] and read back its content
-  $0 -v -r3 -w16#1234 -x1 -b3
-
-  read ADC[4] and  ADC[0]:
-  $0 -v -a16#11 -r3     # first 4 bytes should be ignored
 
   report temperature of the chip:
   while true; do $0 -a0x100 -x0; sleep 1; done;
@@ -62,7 +60,8 @@ EOF
 # Default setting of the ad5592
 #
 # Default spidev command
-SPIDEV_CMD="./ad5592 -H"	#ad5592 reacts on falling edge of the clock
+#SPIDEV_CMD="./ad5592 -H"	#obsolete#ad5592 reacts on falling edge of the clock
+SPIDEV_CMD="./dadcmon -H"       #ad5592 reacts on falling edge of the clock
 VERB=""
 
 # Default register setting
@@ -95,7 +94,7 @@ function transfer {
 }
 #'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 OPTIND=1    	# do not skip arguments
-while getopts "vx:a:ib:w:zh" opt; do
+while getopts "vx:a:ib:w:s:zh" opt; do
   if [ -n "$VERB" ]; then echo "opt,optarg=$opt,$OPTARG"; fi
   case $opt in
     v) VERB="-v";;
@@ -131,6 +130,11 @@ while getopts "vx:a:ib:w:zh" opt; do
        ;;
     w)
        ((Reg = ${OPTARG:0:2}<<11 | (${OPTARG:2} & 0x7FF) ));
+       get_two_bytes $Reg;
+       BYTES=$BYTES$two_bytes;
+       ;;
+    s)
+       ((Reg = 0x8000 | ${OPTARG:0:1}<<12 | (${OPTARG:1} & 0xFFF) ));
        get_two_bytes $Reg;
        BYTES=$BYTES$two_bytes;
        ;;

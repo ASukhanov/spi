@@ -22,6 +22,7 @@
 #include <sys/ioctl.h>
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
+#include <unistd.h> //for sleep()
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -39,6 +40,12 @@ static uint16_t delay;
 static int verbose;
 static int fd = 0;
 static int monitoring = 0;
+static int guard_adc_channel = 1;
+static int guard_dac_channel = 1;
+static int guard_trip_level = 0x800;
+#define NCH 9
+static int channels[NCH];
+static int trip_value = 0;	// value to download into the DAC in case of trip
 
 uint8_t default_tx[] = {
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -133,38 +140,68 @@ static void transfer(uint8_t const *tx, uint8_t const *rx, size_t len)
 			tr.tx_buf = 0;
 */
 	}
-	//printf("fd=%x,tx=%x,rx=%x\n",fd,tx,rx);
-	//for(ii=0;ii<len;ii++) printf("%02x\n",tx[ii]);
 	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
 	if (ret < 1)
 		pabort("can't send spi message");
-
-	/*
-	if (verbose)
-		hex_dump(tx, len, 32, "TX");
-	hex_dump(rx, len, 32, "RX");
-	*/
+}
+static void decode_rx(uint8_t *rx, int nn, int *channels)
+{
+	int ii,ch;
+	uint16_t w;
+	for (ii=0; ii<NCH; ii++) channels[ii] = -1;
+	for (ii=0; ii<nn*2;)
+	{
+		//printf("%02x%02x, ",rx[0],rx[1]);
+		ch = ((*rx)>>4)&0xf;
+		w = ((*rx++)&0xf)<<8;
+		w |= (*rx++);
+		ii += 2;
+		if(ch>=NCH) continue;
+		if(channels[ch] != -1) continue;
+		channels[ch] = w;
+	}
+	//printf("\n");
+	for (ii=0; ii<NCH; ii++) printf("%04x ",channels[ii]);
+	printf("\n");
+}
+static void guard(int adc_channel, int trip_level, int dac_channel)
+{
+	uint8_t dacb[] = {0, 0};
+	uint8_t ir[2],bb;
+	uint16_t *dacw = (uint16_t*) dacb;
+	if (channels[adc_channel] > guard_trip_level)
+	{
+                printf("Trip! ADC[%1i]=%04x exceeds %04x, DAC[%1i] is set to %04x\n",
+		adc_channel,channels[adc_channel],guard_trip_level,dac_channel,trip_value);
+		*dacw = 0x8000 | (dac_channel&0x7)<<12 | (trip_value&0xfff);
+		bb=dacb[0]; dacb[0]=dacb[1]; dacb[1]=bb; //swap bytes
+	}
+	transfer(dacb, ir, 2);
+        if (verbose){
+                hex_dump(dacb, 2, 2, "TX");
+        	hex_dump(ir, 2, 2, "RX");
+	}
 }
 static void monitor() {
-        //#define NW 9 
 	#define NW 10
-	uint8_t monitor_tx_set[] = {0x13, 0xFF};
-        //uint8_t monitor_tx_set[] = {0x11, 0x7F};
+	//uint8_t monitor_tx_set[] = {0x13, 0xFF};	// ADC repetitive mode, Temperature included
+        uint8_t monitor_tx_set[] = {0x11, 0xFF};	// Temperature included.
 	uint8_t twoz[] = {0x00, 0x00};
 	uint8_t rx[NW*2];
         char *ir;
 	int ii;
-	printf("Monitor\n");
-	//mode |= SPI_CPHA;
+	//printf("Monitor\n");
 	ir = rx;
-        printf("set\n");
+        //printf("set\n");
         transfer(monitor_tx_set, ir, 2);
-	printf("watch\n");
+	//printf("watch\n");
 	for(ii=0, ir=rx; ii<NW; ii++){
 		transfer(twoz, ir, 2);
 		ir +=2;
 	}
-	hex_dump(rx, NW*2, NW*2, "RX");
+	//hex_dump(rx, NW*2, NW*2, "RX");
+	decode_rx(rx,NW,channels);
+	guard(guard_adc_channel,guard_trip_level,guard_dac_channel);
 }
 
 static void print_usage(const char *prog)
@@ -349,6 +386,8 @@ int main(int argc, char *argv[])
 	  printf("bits per word: %d\n", bits);
 	  printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
 	}
+	while(1)
+	{
         if (monitoring) monitor();
 	else {
 	if (input_tx) {
@@ -379,6 +418,9 @@ int main(int argc, char *argv[])
 		free(rx);
 		free(tx);
 	}
+	}
+	if(!monitoring) break;
+	else sleep(1);
 	}
 	close(fd);
 
