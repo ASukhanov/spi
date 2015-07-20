@@ -15,12 +15,13 @@ OPTIONS:
         bits M[7:0] specify the ADC channels for readout
         bit M[8]: include temperature in the readout sequence
         bit M[9]: repeat mode of the ADC readout
-  -wRW  Schedule the writing of 11 bits W[10:0] into the register R.
+  -wRR=W  Schedule the writing of 11 bits W[10:0] into the register R.
         R should be 2-digit field. 01:07 setup registers, 08:15 DAC registers
   -xN   Execute the scheduled transfers, followed by the reading of N 16-bit
         words.
   -bR   Read back the setting of register R.
-  -sRW  Set DAC[R]=W. R should be less than 8.
+  -dR=W  Set DAC[R]=W. R should be less than 8.
+  -DR   Read DAC[R], use -x1 to get the reading
   -z    reset.
 
 EXAMPLES:
@@ -42,11 +43,11 @@ RX | 00 00 00 7F __ __ __ __ __ __ __ __ __ __ __ __  | ..
   $0 -a0 -x0
 
   write 0x330 into the General Purpose Register and read back
-  $0 -w0316#330 -x0 -b3
+  $0 -w03=16#330 -x0 -b3
   the result should be: RX | 00 00 00 F0
 
   set DAC[1] to 0x200 and read it back
-  $0 -s10x200 -w010x19 -x1
+  $0 -s1=0x200 -w010x19 -x1
 
   read back all registers:
   $0 -b1 -b2 -b3 -b4 -b5 -b6 -b7 -b8 -b9 -b10 -b11 -b12 -b13
@@ -94,7 +95,7 @@ function transfer {
 }
 #'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 OPTIND=1    	# do not skip arguments
-while getopts "vx:a:ib:w:s:zh" opt; do
+while getopts "vx:a:ib:w:d:D:zh" opt; do
   if [ -n "$VERB" ]; then echo "opt,optarg=$opt,$OPTARG"; fi
   case $opt in
     v) VERB="-v";;
@@ -129,12 +130,17 @@ while getopts "vx:a:ib:w:s:zh" opt; do
        transfer $two_bytes$twoz;
        ;;
     w)
-       ((Reg = ${OPTARG:0:2}<<11 | (${OPTARG:2} & 0x7FF) ));
+       ((Reg = ${OPTARG:0:2}<<11 | (${OPTARG:3} & 0x7FF) ));
        get_two_bytes $Reg;
        BYTES=$BYTES$two_bytes;
        ;;
-    s)
-       ((Reg = 0x8000 | ${OPTARG:0:1}<<12 | (${OPTARG:1} & 0xFFF) ));
+    d)
+       ((Reg = 0x8000 | ${OPTARG:0:1}<<12 | (${OPTARG:2} & 0xFFF) ));
+       get_two_bytes $Reg;
+       BYTES=$BYTES$two_bytes;
+       ;;
+    D)
+       ((Reg = 0x0818 | (${OPTARG:0:1} & 0xF) ));
        get_two_bytes $Reg;
        BYTES=$BYTES$two_bytes;
        ;;

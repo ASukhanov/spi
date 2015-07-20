@@ -163,6 +163,7 @@ static void decode_rx(uint8_t *rx, int nn, int *channels)
 	//printf("\n");
 	for (ii=0; ii<NCH; ii++) printf("%04x ",channels[ii]);
 	printf("\n");
+	fflush(stdout);
 }
 static void guard(int adc_channel, int trip_level, int dac_channel)
 {
