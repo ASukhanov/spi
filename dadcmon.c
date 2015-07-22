@@ -11,6 +11,7 @@
  * Cross-compile with cross-gcc -I/path/to/cross-kernel/include
  */
 // Version 20150712	commented out the code, not compatible with raspberry pi
+// Version 20150721	monitoring added
 
 #include <stdint.h>
 #include <unistd.h>
@@ -23,6 +24,7 @@
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
 #include <unistd.h> //for sleep()
+#include <time.h> 
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -148,6 +150,9 @@ static void decode_rx(uint8_t *rx, int nn, int *channels)
 {
 	int ii,ch;
 	uint16_t w;
+	struct tm *now;
+	time_t curtime;
+
 	for (ii=0; ii<NCH; ii++) channels[ii] = -1;
 	for (ii=0; ii<nn*2;)
 	{
@@ -160,8 +165,12 @@ static void decode_rx(uint8_t *rx, int nn, int *channels)
 		if(channels[ch] != -1) continue;
 		channels[ch] = w;
 	}
+	curtime = time (NULL);
+	now = localtime(&curtime);
 	//printf("\n");
-	for (ii=0; ii<NCH; ii++) printf("%04x ",channels[ii]);
+	printf("%04i-%02i-%02i %02i:%02i:%02i",
+	now->tm_year+1900,now->tm_mon+1,now->tm_mday,now->tm_hour,now->tm_min,now->tm_sec);
+	for (ii=0; ii<NCH; ii++) printf(" %04i",channels[ii]);
 	printf("\n");
 	fflush(stdout);
 }
@@ -191,11 +200,8 @@ static void monitor() {
 	uint8_t rx[NW*2];
         char *ir;
 	int ii;
-	//printf("Monitor\n");
 	ir = rx;
-        //printf("set\n");
         transfer(monitor_tx_set, ir, 2);
-	//printf("watch\n");
 	for(ii=0, ir=rx; ii<NW; ii++){
 		transfer(twoz, ir, 2);
 		ir +=2;

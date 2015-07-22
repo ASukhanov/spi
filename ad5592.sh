@@ -22,14 +22,15 @@ OPTIONS:
   -bR   Read back the setting of register R.
   -dR=W  Set DAC[R]=W. R should be less than 8.
   -DR   Read DAC[R], use -x1 to get the reading
-  -z    reset.
+  -z    Reset, for experts only, init is required after it.
 
 EXAMPLES:
-  reset and read Reg[6]
-  $0 -z -b6
-  the result should be:
+  Initialize and read Powerdown register, Reg[11]:
+  $0 -i -b11
+  IMPORTANT: The result should be:
 RX | 00 00 __ __ __ __ __ __ __ __ __ __ __ __ __ __  | ..
-RX | 00 00 00 7F __ __ __ __ __ __ __ __ __ __ __ __  | ..
+RX | 00 00 02 00 __ __ __ __ __ __ __ __ __ __ __ __  | ..
+Bit[9] is internal reference, it should be set
 
   Configure 8 channels as ADCs (e.g. write 0xFF into reg[4])
   Configure channels 1,3,5,7 as DACs (e.g. write 0xAA into reg[5])
@@ -38,6 +39,7 @@ RX | 00 00 00 7F __ __ __ __ __ __ __ __ __ __ __ __  | ..
   Monitor 7 ADC channels and temperature every second:
   $0 -a0x37f -x0  # set ADC repetitive mode and enable 7 ADCs in sequence
   while true ; do ./ad5592.sh -x8; sleep 1; done
+  WARNING: The repetitive mode should be turned off when reading registers 
 
   Turn off ADC repetitive mode.
   $0 -a0 -x0
@@ -62,20 +64,36 @@ EOF
 #
 # Default spidev command
 #SPIDEV_CMD="./ad5592 -H"	#obsolete#ad5592 reacts on falling edge of the clock
-SPIDEV_CMD="./dadcmon -H"       #ad5592 reacts on falling edge of the clock
+SPIDEV_CMD="/home/pi/spi/dadcmon -H"       #ad5592 reacts on falling edge of the clock
 VERB=""
 
-# Default register setting
+# Default register setting         /''\
                                  #5432109876543210
-((Reg_Powerdown               = 2#0101101000000000)) 
-# Enable internal reference
-((Reg_General_Purpose_Control = 2#0001101100110000)) #
-# addr=3, ADC buffer enabled, Lock off, not AllDACs, ADC range 2x, DAC: 2x.
-((Reg_ADC_Config              = 2#0010000111111111)) # all ADCs and temperature selected
-((Reg_Sequencer               = 2#0001000000000000)) # empty sequencer
-((Reg_DAC_Config              = 2#0010100010101010)) # setting for the EMCO board
-((Reg_Readback                = 2#0011100001000000)) #
-((Reg_Reset                   = 2#0111110110101100)) #
+((Reg_Powerdown               = 2#0101101000000000))
+# addr=0b1011. Important Bit[9]: Enable internal reference
+
+((Reg_General_Purpose_Control = 2#0001101100110000))
+# addr=0b0011, ADC buffer enabled, Lock off, not AllDACs, 
+# ADC range 2x, DAC: 2x.
+
+((Reg_ADC_Config              = 2#0010000111111111))
+# all ADCs and temperature selected
+
+((Reg_Sequencer               = 2#0001000000000000))
+# empty sequencer
+
+((Reg_DAC_Config              = 2#0010100010101010))
+# setting for the EMCO board
+#,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+#'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+# Special registers
+
+((Reg_Readback                = 2#0011100001000000))
+# Readback enabled
+
+((Reg_Reset                   = 2#0111110110101100))
+# addr=0b1111
+
 twoz="\x00\x00"
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 #'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -115,7 +133,7 @@ while getopts "vx:a:ib:w:d:D:zh" opt; do
        get_two_bytes $Reg_Powerdown;
        list=$two_bytes;
        get_two_bytes $Reg_Sequencer;
-       list=$two_bytes;
+       list=$list$two_bytes;
        get_two_bytes $Reg_ADC_Config;
        list=$list$two_bytes;
        get_two_bytes $Reg_DAC_Config;
