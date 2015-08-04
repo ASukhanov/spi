@@ -5,6 +5,7 @@ fn='/home/andrey/dadc.log'
 
 import pylab as pl
 
+MAXY=4100
 NP=1000
 NG=9
 X = pl.arange(0,NP,1)
@@ -19,7 +20,7 @@ fig = pl.figure()
 for ii in range(NG):
   sp.append(fig.add_subplot(111))
   Y.append(pl.linspace(0,0,NP))
-  Y[ii][0]=1000
+  Y[ii][0]=MAXY
   grf.append(sp[ii].plot(X,Y[ii])[0]) 
 
 f = open(fn)
