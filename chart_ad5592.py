@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Dynamic chart of 9 reading from the changing log file
-fn='/home/andrey/dadc.log' 
+fn='/tmp/dadc.log' 
 #version 1 2015-07-21
 
 import pylab as pl
@@ -36,6 +36,13 @@ while True:
       continue
     ii += 1
     day,time,d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],d[8] = latest_data.split(' ')
+    
+    #clear unused channels
+    #d[7] = 0
+
+    #scale channels
+    d[7] = str(4096 - int(d[7]))	# voltage drop on D2 shottky
+
     for nn in range(NG):
       Y[nn][ii%NP] = d[nn]
       Y[nn][(ii+1)%NP] = 0
