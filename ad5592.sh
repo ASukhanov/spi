@@ -5,6 +5,7 @@ cat << EOF
 usage: usage: $0 options
 
 Control of the AD5592 ADC/DAC
+Attention: Channel numbering on the PCB v5.0 is 0,1,2,3,7,6,5,4.
 
 OPTIONS:
   options
@@ -82,7 +83,7 @@ VERB=""
 ((Reg_Sequencer               = 2#0001000000000000))
 # empty sequencer
 
-((Reg_DAC_Config              = 2#0010100010101010))
+((Reg_DAC_Config              = 2#0010100000000010))
 # setting for the EMCO board
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 #'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
