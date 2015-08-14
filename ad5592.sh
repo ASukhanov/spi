@@ -65,7 +65,7 @@ EOF
 #
 # Default spidev command
 #SPIDEV_CMD="./ad5592 -H"	#obsolete#ad5592 reacts on falling edge of the clock
-SPIDEV_CMD="/home/pi/spi/dadcmon -H"       #ad5592 reacts on falling edge of the clock
+SPIDEV_CMD="dadcmon -H"       #ad5592 reacts on falling edge of the clock
 VERB=""
 
 # Default register setting         /''\
