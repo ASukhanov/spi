@@ -186,7 +186,7 @@ static void guard(int adc_channel, int trip_level, int dac_channel)
   uint16_t *dacw = (uint16_t*) dacb;
   if (channels[adc_channel] > trip_level)
   {
-    printf("Trip! ADC[%1i]=%04x exceeds %04x, DAC[%1i] is set to %04x\n",
+    printf("#Trip! ADC[%1i]=%i exceeds %i, DAC[%1i] is set to %04x\n",
     adc_channel,channels[adc_channel],trip_level,dac_channel,trip_value);
     *dacw = 0x8000 | (dac_channel&0x7)<<12 | (trip_value&0xfff);
     bb=dacb[0]; dacb[0]=dacb[1]; dacb[1]=bb; //swap bytes
@@ -448,8 +448,8 @@ int main(int argc, char *argv[])
         free(rx);
         free(tx);
       }
+      break;
     }
-    break;
   }
   close(fd);
   return ret;
