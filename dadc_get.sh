@@ -3,7 +3,7 @@
 # The DADC_SERVER should be exported prior to running this script i.e.:
 # $ export DADC_SERVER=pi@130.199.23.244
 
-CMD="ssh $DADC_SERVER 'spi/dadcmon -m' >>/tmp/dadc.log"
+CMD="ssh $DADC_SERVER 'dadcmon -m' >>/tmp/dadc.log"
 echo executing: $CMD
 
 eval $CMD
