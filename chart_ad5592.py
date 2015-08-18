@@ -37,8 +37,8 @@ while True:
     p = f.tell()
     if len(latest_data)==0:
       pastdata = False
-      #pl.pause(1)
-      time.sleep(1)
+      pl.pause(1) # provides interactive chart control, but takes more CPU time
+      #time.sleep(1) #this takes much less of CPU but no interactive control of the chart
       continue
     ii += 1
     fday,ftime,d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],d[8] = latest_data.split(' ')
@@ -58,7 +58,6 @@ while True:
       pl.draw()
       #fig.canvas.draw()
       #time.sleep(1) 
-    #print(grf)
     if  not pastdata:
       pl.draw()
       #fig.canvas.draw()
