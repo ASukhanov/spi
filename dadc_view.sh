@@ -17,7 +17,7 @@ main(){
      else #v7 PCB
        append_tabbed "date------ time---- BMon IBHR BPrg IBLR ad4  ad5  AVDD DVDD temp" 11 " "
    fi
-   #append_tabbed "`dadcmon -M1`" 11 " "
+   append_tabbed "`dadcmon -M1`" 11 " "
    endwin
 }
 #then ask the standard loop
