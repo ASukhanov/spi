@@ -1,4 +1,3 @@
--
 #!/bin/bash
 # Display the EMCO_AD5592 ADCs
 # To work with old EMCO_AD5592_v5 board the $EMCO_AD5592-v5 environment variable should be exported
