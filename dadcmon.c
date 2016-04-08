@@ -94,7 +94,7 @@ static void hex_dump(const void *src, size_t length, size_t line_size, char *pre
 }
 
 /*
- *  Unescape - process hexadecimal escape character
+ *  Une{ "monitor", 0, 0, 'm' },scape - process hexadecimal escape character
  *      converts shell input "\x23" -> 0x23
  */
 static int unescape(char *_dst, char *_src, size_t len)
@@ -237,6 +237,8 @@ static void print_usage(const char *prog)
        "  -4 --quad     quad transfer\n"
 */
        "  -m --monitor  monitor\n"
+       "  -MN --monitor  monitor N times\n"
+       "  -h --help     help\n"
       );
   exit(1);
 }
@@ -261,11 +263,12 @@ static void parse_opts(int argc, char *argv[])
       { "verbose", 0, 0, 'v' },
 //&RA/      { "quad",    0, 0, '4' },
       { "monitor", 0, 0, 'm' },
+      { "Monitor", 0, 0, 'M' },
+      { "help",    0, 0, 'h' },
       { NULL, 0, 0, 0 },
     };
     int c;
-
-    c = getopt_long(argc, argv, "D:s:d:b:lHOLC3NR24p:vm", lopts, NULL);
+    c = getopt_long(argc, argv, "D:s:d:b:lHOLC3NR24p:vmM:h", lopts, NULL);
 
     if (c == -1)
       break;
@@ -322,8 +325,13 @@ static void parse_opts(int argc, char *argv[])
 */
     case 'm':
       mode |= SPI_CPHA;
-      monitoring=1;
+      monitoring = 1000000;
       break;
+    case 'M':
+      mode |= SPI_CPHA;
+      monitoring = atoi(optarg);
+      break;
+    case 'h':
     default:
       print_usage(argv[0]);
       break;
@@ -414,9 +422,11 @@ int main(int argc, char *argv[])
   }
   while(1)
   {
-    if (monitoring) 
+    if (monitoring--) 
       {
+         //printf("monitoring=%i\n",monitoring);
          monitor();
+         if (monitoring==0) break;
          sleep(1);
       }
     else {
