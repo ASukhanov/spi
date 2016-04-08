@@ -1,3 +1,4 @@
+-
 #!/bin/bash
 # Display the EMCO_AD5592 ADCs
 # To work with old EMCO_AD5592_v5 board the $EMCO_AD5592-v5 environment variable should be exported
@@ -13,7 +14,7 @@ main(){
    ((COUNT=COUNT+1))
    if [ -n "$EMCO_AD5592_v5" ];
      then #v5 PCB
-       append_tabbed "date------ time---- BMon BPrg IBHR AVDD ad4  DVDD ad6  AVDD temp" 11 " "
+       append_tabbed "date------ time---- BMon BPrg IBHR ad3  ad4  DVDD ad6  AVDD temp" 11 " "
      else #v7 PCB
        append_tabbed "date------ time---- BMon IBHR BPrg IBLR ad4  ad5  AVDD DVDD temp" 11 " "
    fi
