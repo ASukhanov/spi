@@ -14,4 +14,4 @@ echo "$TITLE"
 echo "$FIELDS"
 
 #start monitoring with changed trip level
-./dadcmon -t100 -m
+dadcmon -t100 -m
