@@ -13,6 +13,20 @@
 // Version 20150712	commented out the code, not compatible with raspberry pi
 // Version 20150721	monitoring added
 // Version 20150812     trip_level reduced to 1300 (=383V)
+// Version v4 20160409  no line feed in monitor
+
+// Set the guard sense channel, trip channel and the trip level.
+/* For PCB v5
+static int guard_sense_channel = 1; // sense channel
+static int guard_trip_level = 1300; // trip level for the sense channel
+static int guard_trip_channel = 1; // trip channel, it will be set to 0
+*/
+// For PCB v7
+static int guard_sense_channel = 0; // sense channel
+static int guard_trip_level = 200; // trip level for the sense channel
+static int guard_trip_channel = 2; // trip channel, it will be set to 0
+/**/
+
 
 #include <stdint.h>
 #include <unistd.h>
@@ -45,10 +59,6 @@ static int verbose;
 static int fd = 0;
 
 static int monitoring = 0;
-static int guard_adc_channel = 1; // ADC for Bias setting
-static int guard_dac_channel = 1; // DAC for Bias setting
-// do not allow Bias setting above 1300, which corresponds to 383V
-static int guard_trip_level = 1300; 
 
 #define NCH 9
 static int channels[NCH];
@@ -172,11 +182,12 @@ static void decode_rx(uint8_t *rx, int nn, int *channels)
   }
   curtime = time (NULL);
   now = localtime(&curtime);
-  //printf("\n");
+  //v4//printf("\n");
+  printf("\r");
   printf("%04i-%02i-%02i %02i:%02i:%02i",
   now->tm_year+1900,now->tm_mon+1,now->tm_mday,now->tm_hour,now->tm_min,now->tm_sec);
   for (ii=0; ii<NCH; ii++) printf(" %04i",channels[ii]);
-  printf("\n");
+  //v3printf("\n");
   fflush(stdout);
 }
 static void guard(int adc_channel, int trip_level, int dac_channel)
@@ -213,7 +224,7 @@ static void monitor() {
   }
   //hex_dump(rx, NW*2, NW*2, "RX");
   decode_rx(rx,NW,channels);
-  guard(guard_adc_channel,guard_trip_level,guard_dac_channel);
+  guard(guard_sense_channel,guard_trip_level,guard_trip_channel);
 }
 
 static void print_usage(const char *prog)
@@ -237,6 +248,7 @@ static void print_usage(const char *prog)
        "  -4 --quad     quad transfer\n"
 */
        "  -m --monitor  monitor\n"
+       "  -t --trip     trip level\n"
        "  -MN --monitor  monitor N times\n"
        "  -h --help     help\n"
       );
@@ -264,11 +276,12 @@ static void parse_opts(int argc, char *argv[])
 //&RA/      { "quad",    0, 0, '4' },
       { "monitor", 0, 0, 'm' },
       { "Monitor", 0, 0, 'M' },
+      { "trip",    1, 0, 't' },
       { "help",    0, 0, 'h' },
       { NULL, 0, 0, 0 },
     };
     int c;
-    c = getopt_long(argc, argv, "D:s:d:b:lHOLC3NR24p:vmM:h", lopts, NULL);
+    c = getopt_long(argc, argv, "D:s:d:b:lHOLC3NR24p:vmM:t:h", lopts, NULL);
 
     if (c == -1)
       break;
@@ -331,6 +344,11 @@ static void parse_opts(int argc, char *argv[])
       mode |= SPI_CPHA;
       monitoring = atoi(optarg);
       break;
+    case 't':
+      guard_trip_level = atoi(optarg);
+      if(verbose) printf("Trip level for dac[%i] is set to %i, tripping dac[%i]\n",
+        guard_sense_channel, guard_trip_level, guard_trip_channel);
+      break;
     case 'h':
     default:
       print_usage(argv[0]);
@@ -368,7 +386,7 @@ int main(int argc, char *argv[])
   action.sa_handler = term;
   sigaction(SIGTERM, &action, NULL);
 #endif
-  
+
   parse_opts(argc, argv);
 
   fd = open(device, O_RDWR);
