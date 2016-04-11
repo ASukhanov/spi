@@ -14,6 +14,7 @@
 // Version 20150721	monitoring added
 // Version 20150812     trip_level reduced to 1300 (=383V)
 // Version v4 20160409  no line feed in monitor
+// Version v5 20160411  print "RX only if verbose is set
 
 // Set the guard sense channel, trip channel and the trip level.
 /* For PCB v5
@@ -39,7 +40,7 @@ static int guard_trip_channel = 2; // trip channel, it will be set to 0
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
 #include <unistd.h> //for sleep()
-#include <time.h> 
+#include <time.h>
 #include <signal.h>
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -469,8 +470,10 @@ int main(int argc, char *argv[])
         rx = (uint8_t*) &default_rx;
         transfer(tx, rx, size);
       }
-      if (verbose)    hex_dump(tx, size, 16, "TX");
-      hex_dump(rx, size, 16, "RX");
+      if (verbose){
+        hex_dump(tx, size, 16, "TX");
+        hex_dump(rx, size, 16, "RX");
+      }
       if( tx != (uint8_t*) &reset_tx)
       {
         free(rx);
