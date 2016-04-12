@@ -1,4 +1,5 @@
 #!/bin/bash
+#Version 2 2016-03-21. DAC setting for v7 PCB
 usage ()
 {
 cat << EOF
@@ -9,7 +10,7 @@ Attention: Channel numbering on the PCB v5.0 is 0,1,2,3,7,6,5,4.
 
 OPTIONS:
   options
-  -v    Verbosity
+  -v    Verbosity, to have an effect it should precede -x
   -i    Init, default setting of the ad5592, should be executed after
         power up.
   -aM   Schedule the reading of ADC channels specified by the mask M.
@@ -83,7 +84,13 @@ VERB=""
 ((Reg_Sequencer               = 2#0001000000000000))
 # empty sequencer
 
-((Reg_DAC_Config              = 2#0010100000000010))
+# Using DAC mapping for v6 board
+#v2#((Reg_DAC_Config              = 2#0010100000000010)) # Channel[1] is DAC
+
+# DAC map for EMCO_v7 board:
+# 7:DVDD, 6:AVDD, 5:AD5, 4:AD4, 3:IBLR, 2:BPrg, 1:IBHR: 0:BMON
+ ((Reg_DAC_Config              = 2#0010100000110100)) # Channels [2,4,5] are DACs
+
 # setting for the EMCO board
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 #'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
