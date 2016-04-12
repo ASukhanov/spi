@@ -44,7 +44,7 @@ while True:
       continue
     #print (latest_data)
     ii += 1
-    fday,ftime,d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],d[8] = latest_data[:64].split(' ')
+    fday,ftime,d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],d[8] = latest_data[:65].split(' ')
     
     '''
     #scale some channels
