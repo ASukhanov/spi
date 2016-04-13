@@ -15,6 +15,8 @@
 // Version 20150812     trip_level reduced to 1300 (=383V)
 // Version v4 20160409  no line feed in monitor
 // Version v5 20160411  print "RX only if verbose is set
+// Version v6 20160413  safety trips: IBLR, BPrg
+// TODO: add one more trip when difference BPrg-BMon is significant
 
 // Set the guard sense channel, trip channel and the trip level.
 /* For PCB v5
@@ -24,8 +26,12 @@ static int guard_trip_channel = 1; // trip channel, it will be set to 0
 */
 // For PCB v7
 static int guard_sense_channel = 0; // sense channel
-static int guard_trip_level = 200; // trip level for the sense channel
+static int guard_trip_level = 4100; // trip level for the sense channel
 static int guard_trip_channel = 2; // trip channel, it will be set to 0
+static int guard_trip_level_IBLR = 40; // ~10uA Hi current trip
+static int guard_channel_IBLR = 3;
+static int guard_channel_BPrg = 2;
+static int guard_trip_level_BPrg = 1420; // ~420V, not safe for capacitors
 /**/
 
 
@@ -105,7 +111,7 @@ static void hex_dump(const void *src, size_t length, size_t line_size, char *pre
 }
 
 /*
- *  Une{ "monitor", 0, 0, 'm' },scape - process hexadecimal escape character
+ *  Unescape - process hexadecimal escape character
  *      converts shell input "\x23" -> 0x23
  */
 static int unescape(char *_dst, char *_src, size_t len)
@@ -196,13 +202,30 @@ static void guard(int adc_channel, int trip_level, int dac_channel)
   uint8_t dacb[] = {0, 0};
   uint8_t ir[2],bb;
   uint16_t *dacw = (uint16_t*) dacb;
-  if (channels[adc_channel] > trip_level)
+
+  //safety trips
+  if (channels[guard_channel_IBLR] > guard_trip_level_IBLR)
+  {
+    printf("#Trip IBLR! ADC[%1i]=%i exceeds %i, DAC[%1i] is set to 0\n",
+      guard_channel_IBLR, channels[guard_channel_IBLR], guard_trip_level_IBLR, guard_channel_BPrg);
+    *dacw = 0x8000 | (guard_channel_BPrg&0x7)<<12;
+  }
+  else if (channels[guard_channel_BPrg] > guard_trip_level_BPrg)
+  {
+    printf("#Trip BPrg! ADC[%1i]=%i exceeds %i, DAC[%1i] is set to 0\n",
+      guard_channel_BPrg, channels[guard_channel_BPrg], guard_trip_level_BPrg, guard_channel_BPrg);
+    *dacw = 0x8000 | (guard_channel_BPrg&0x7)<<12;
+  }
+  //user defined trip
+  else if (channels[adc_channel] > trip_level)
   {
     printf("#Trip! ADC[%1i]=%i exceeds %i, DAC[%1i] is set to %04x\n",
-    adc_channel,channels[adc_channel],trip_level,dac_channel,trip_value);
+      adc_channel,channels[adc_channel],trip_level,dac_channel,trip_value);
     *dacw = 0x8000 | (dac_channel&0x7)<<12 | (trip_value&0xfff);
-    bb=dacb[0]; dacb[0]=dacb[1]; dacb[1]=bb; //swap bytes
   }
+  else return;
+
+  bb=dacb[0]; dacb[0]=dacb[1]; dacb[1]=bb; //swap bytes
   transfer(dacb, ir, 2);
   if (verbose){
     hex_dump(dacb, 2, 2, "TX");
