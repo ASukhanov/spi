@@ -8,7 +8,7 @@ fn='/tmp/dadc.log'
 NCurves = 9
 NPoints = 1000
 Tail = True
-labels = ('BMon','IBHR','BPrg','IBLR','ad4','ad5','AVDD','DVDD','Temp')
+labels = ('00:00:00','BMon','IBHR','BPrg','IBLR','ad4','ad5','AVDD','DVDD','Temp')
 
 import sys
 import getopt
@@ -41,35 +41,33 @@ win.resize(NPoints,600)
 # Enable antialiasing for prettier plots
 pg.setConfigOptions(antialias=True)
 
-for ii in range(NCurves):
-  label = pg.LabelItem(labels[ii],justify='right',bold=True,size='14pt')
-  label.setText(labels[ii],color=pg.intColor(ii))
-  win.addItem(label,row=0,col=ii)
+label = []
+for ii in range(NCurves+1):
+  label.append(pg.LabelItem(labels[ii],justify='right',bold=True,size='14pt'))
+  if ii:
+    tcolor = pg.intColor(ii-1)
+  else:
+    tcolor = 'w'
+  label[ii].setText(labels[ii],color=tcolor)
+  win.addItem(label[ii],row=0,col=ii)
   #win.addLabel(labels[ii],row=0,col=ii,color=pg.intColor(ii))
 
-randplot = win.addPlot(row=1,col=0,colspan=NCurves)
+randplot = win.addPlot(row=1,col=0,colspan=NCurves+1)
 
 grf = []
 for ii in range(NCurves):
   grf.append(randplot.plot(pen=(ii,NCurves)))
 
-# generate random samples
-rndm = np.empty((NCurves,NPoints),dtype=np.int)
-for ii in range(NCurves):
-  rndm[ii] = np.random.random_integers(0,10,NPoints)
-
 data = np.zeros((NCurves,NPoints),dtype=np.int)
 
 f = open(fn,'rU')
-p = 0
 step = 0
 pastdata = True
 d = [0 for ii in range(NCurves)]
 
-
 def update():
-    global f,p,step,d
-    for  lines in range(100):
+    global f,step,d,Tail
+    for  lines in range(NPoints):
       step = (step + 1) % NPoints
       if Tail:
         f.seek(-(65+5),2)
@@ -77,31 +75,31 @@ def update():
       else:
         latest_data = f.readline()
       #print('l='+str(len(latest_data)))
-      #if Tail:
-      #  print('tell')
-      #  p = f.tell()
       if len(latest_data)<10: #too short
+        if len(latest_data)==0: # reached end of file
+          print('End of file reached, please restart program without -b option.')
+          Tail = True 
         return
-      #print('['+latest_data+']'),
       try: 
-        fday,ftime,d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],d[8] = latest_data[:65].split(' ')
+        fday,ftime,d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],d[8] = latest_data.split(' ')
       except:
         print(latest_data),
         return
-      #print(ftime)
+      label[0].setText(ftime)
       #
       # roll and update data arrays
-      for ii in range(NCurves):
-        data[ii][1:] = data[ii][:-1]
-        #data[ii][:1] = rndm[ii][step] + ii*10
-        data[ii][:1] = d[ii]
-      #
-      # update plots 
-      for ii in range(NCurves):
-        grf[ii].setData(data[ii])
       if Tail:
-        return
-        
+        for ii in range(NCurves):
+          data[ii][1:] = data[ii][:-1]
+          data[ii][:1] = d[ii]
+        break
+      else:
+        for ii in range(NCurves):
+          data[ii][step] = d[ii]
+    #
+    # update plots 
+    for ii in range(NCurves):
+      grf[ii].setData(data[ii])
 timer = QtCore.QTimer()
 timer.timeout.connect(update)
 if Tail:
