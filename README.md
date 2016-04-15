@@ -11,6 +11,7 @@ ad5592-v7.sh:	Channel map of the v7 PCB
 
 stripchart_log.py:	Graphical stripchart of a logfile using pyqtgraph
 
+############################################################
 
 To initialize the EMCO_AD5592 board execute:
 ad5592.sh -i
