@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/python
 version = 'v2 2016-04-14 option -t'
 def usage():
   print('Dynamic chart of a changing log file. '+version)
@@ -71,11 +71,10 @@ step = 0
 # Open file and set position
 f = open(fn,'rU')
 if Tail:
-  #f.seek(-(LogLine_length),2)
-  #f.readlines()[-1].decode()
+  fpos = f.seek(0,2)
   fpos = f.tell()
 else:
-  whence = 0 if fpos>0 else 2
+  whence = 0 if fpos>=0 else 2
   print
   f.seek(fpos, whence)
 print('file '+fn+' opened and positioned to '+str(f.tell()))
