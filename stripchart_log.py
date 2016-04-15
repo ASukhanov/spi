@@ -82,6 +82,7 @@ print('file '+fn+' opened and positioned to '+str(f.tell()))
 
 # Define update function
 def update():
+    # get new data in data[]
     global f,step,d,Tail,fpos
     for  lines in range(NPoints):
       step = (step + 1) % NPoints
@@ -117,9 +118,10 @@ def update():
         for ii in range(NCurves):
           data[ii][step] = d[ii]
     #
-    # update plots 
+    # update plots with new data
     for ii in range(NCurves):
       grf[ii].setData(data[ii])
+
 timer = QtCore.QTimer()
 timer.timeout.connect(update)
 timer.start(50)
