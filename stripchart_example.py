@@ -1,9 +1,9 @@
 #!/usr/bin/python
-version = 'v2 2016-04-14 option -t'
 def usage():
   print('Dynamic chart. '+version)
   print(' usage: '+sys.argv[0]+ ' [-c N] [-m]')
   print('   Options: -m: Display means, -c Plot in chunks of N samples.')
+version = 'v3 2016-04-17 option -m, -c'
 
 # Setting
 NCurves = 9
