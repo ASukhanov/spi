@@ -7,7 +7,8 @@ def usage():
   print('   Option -m: Display means')
 
 # Setting
-fn='/tmp/dadc.log'
+#fn='tmp/dadc.log'
+fn='/home/pi/dadc.log'
 NCurves = 9
 NPoints = 1000
 Logline_length = 64

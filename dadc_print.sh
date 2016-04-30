@@ -1,5 +1,5 @@
 #!/bin/bash
-# Display the EMCO_AD5592 ADCs
+# Print the EMCO_AD5592 ADCs
 
 if [ -n "$EMCO_AD5592_v5" ];
 then
@@ -14,4 +14,6 @@ echo "$TITLE"
 echo "$FIELDS"
 
 #start monitoring with changed trip level
+#dadcmon -t1100 -m
 dadcmon -t1100 -m
+
